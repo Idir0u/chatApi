@@ -6,15 +6,12 @@ import org.slf4j.LoggerFactory;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import com.idircorp.chat.entity.Admin;
 import com.idircorp.chat.entity.Client;
-import com.idircorp.chat.service.AdminService;
 import com.idircorp.chat.service.ClientService;
 import com.idircorp.chat.service.JwtService;
 
@@ -35,9 +32,6 @@ public class JwtFilter extends OncePerRequestFilter {
     private JwtService tokenService;
 
     @Autowired
-    private AdminService adminService;
-
-    @Autowired
     private ClientService clientService;
 
     private static final Logger logger = LoggerFactory.getLogger(JwtFilter.class);
@@ -45,34 +39,28 @@ public class JwtFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
-        //String header = request.getHeader("Authorization");
         Cookie[] cookies = request.getCookies();
         String token = null;
-        if(cookies != null){
-            System.out.println("line 47!");
+        if (cookies != null) {
             logger.info("Entering the condition where cookies are not null.");
             token = Arrays.stream(cookies)
-            .filter(cookie -> "jwt".equals(cookie.getName()))
-            .findFirst()
-            .map(Cookie::getValue)
-            .orElse(null);
-            logger.info("token after retrieving it from the cookie in webServlet: "+ token);
+                .filter(cookie -> "jwt".equals(cookie.getName()))
+                .findFirst()
+                .map(Cookie::getValue)
+                .orElse(null);
+            logger.info("Token after retrieving it from the cookie in webServlet: " + token);
         }
         String username = null;
-        String role = null;
 
-        if (token != null  && tokenService.validateToken( token )) {
+        if (token != null && tokenService.validateToken(token)) {
             username = tokenService.getUsernameFromToken(token).toString();
-            role = tokenService.getRoleFromToken(token);
-        
+
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-                Optional<Admin> admin = adminService.getAdminByUsername(username);
                 Optional<Client> client = clientService.getClientByUsername(username);
-                
-                if ( ( admin.isPresent() || client.isPresent() ) ) {
-                    String prefixedRole = "ROLE_" + role.toUpperCase();
+
+                if (client.isPresent()) {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                            username, null, Collections.singletonList(new SimpleGrantedAuthority(prefixedRole)));
+                            username, null, Collections.emptyList());
                     authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                 }
@@ -81,6 +69,4 @@ public class JwtFilter extends OncePerRequestFilter {
 
         filterChain.doFilter(request, response);
     }
-
-    
 }

@@ -19,6 +19,7 @@ public class User {
     private String phone;
     private String firstName;
     private String lastName;
+    private String password;
     
     @Lob
     private byte[] image;

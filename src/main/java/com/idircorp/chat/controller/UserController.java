@@ -21,12 +21,14 @@ public class UserController {
                                            @RequestParam String phone,
                                            @RequestParam String firstName,
                                            @RequestParam String lastName,
+                                           @RequestParam String password,
                                            @RequestParam(required = false) MultipartFile imageFile) throws IOException {
         User user = User.builder()
                 .username(username)
                 .phone(phone)
                 .firstName(firstName)
                 .lastName(lastName)
+                .password(password)
                 .build();
         User savedUser = userService.saveUser(user, imageFile);
         return ResponseEntity.ok(savedUser);
